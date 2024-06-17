@@ -110,7 +110,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalDependencies>d3d11.lib;MSVCRTD.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;D3dcompiler.lib;MSVCRTD.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -130,6 +130,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="bloom.cpp" />
     <ClCompile Include="external\imgui\backends\imgui_impl_dx11.cpp" />
     <ClCompile Include="external\imgui\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="external\imgui\imgui.cpp" />
@@ -137,7 +138,6 @@
     <ClCompile Include="external\imgui\imgui_draw.cpp" />
     <ClCompile Include="external\imgui\imgui_tables.cpp" />
     <ClCompile Include="external\imgui\imgui_widgets.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="src\DXManager.cpp" />
     <ClCompile Include="src\ImguiTest.cpp" />
     <ClCompile Include="src\Window.cpp" />
@@ -155,6 +155,9 @@
     <ClInclude Include="src\Globals.h" />
     <ClInclude Include="src\ImguiTest.h" />
     <ClInclude Include="src\Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\shaders\triangle.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,7 +1,128 @@
 #include "DXManager.h"
 
+
+/// <summary>
+/// Sets vertexData and Draws
+/// </summary>
+
+void DXManager::SetVertexBuffer()
+{
+	UINT stride = sizeof(Vertex); //size of one element
+	UINT offset = 0;
+	devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+
+	//set primitive topology
+	devcon->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	devcon->Draw(3, 0);
+}
+
 DXManager::DXManager() {}
 
+HRESULT DXManager::LoadShader(const LPCWSTR filePath, ID3DBlob** S,  ESHADER_TYPE a_shaderType)
+{
+	ID3DBlob* pErrorBlob = nullptr;
+
+	LPCSTR l_entryPoint= "";
+	LPCSTR l_target= "";
+
+	switch (a_shaderType)
+	{
+	case VERTEX:
+	    l_entryPoint = "VSMain";
+		l_target = "vs_4_0";
+		break;
+	case PIXEL:
+		l_entryPoint = "PSMain";
+		l_target = "ps_4_0";
+		break;
+	default: //shader undefined
+		break;
+	}
+
+	HRESULT hr = D3DCompileFromFile(
+		filePath, // pFileName
+		nullptr,        // pDefines
+		nullptr,        // pInclude
+		l_entryPoint,       // pEntryPoint
+		l_target,       // pTarget
+		0,              // Flags1
+		0,              // Flags2
+		S,			// ppCode
+		&pErrorBlob     // ppErrorMsgs
+	);
+
+	if (FAILED(hr)) {
+		// Handle error
+	}
+	return hr;
+}
+//Shaders related
+void DXManager::InitPipeline()
+{
+	//load shaders
+	LoadShader(L"res/shaders/triangle.shader", &VS, ESHADER_TYPE::VERTEX);
+	LoadShader(L"res/shaders/triangle.shader" , &PS , ESHADER_TYPE::PIXEL);
+
+	// load and compile the two shaders
+	//D3DX11CompileFromFile(L"shaders.shader", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
+	//D3DX11CompileFromFile(L"shaders.shader", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
+
+	// encapsulate both shaders into shader objects
+	dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &pVS);
+	dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &pPS);
+
+	//set the shader objects
+	devcon->VSSetShader(pVS, 0, 0);
+	devcon->PSSetShader(pPS,0,0);	
+}
+
+void DXManager::InitGraphics()
+{
+	CreateVertexBuffer();
+	CopyDataToVertexBuffer();
+}
+
+void DXManager::CreateVertexBuffer()
+{
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
+	bd.ByteWidth = sizeof(Vertex) * 3;             // size is the VERTEX struct * 3
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+
+	dev->CreateBuffer(&bd, NULL, &pVBuffer);       // create the buffer
+}
+
+void DXManager::CopyDataToVertexBuffer()
+{
+	D3D11_MAPPED_SUBRESOURCE ms;
+	devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);   // map the buffer
+	memcpy(ms.pData, vertices, sizeof(vertices));                // copy the data
+	devcon->Unmap(pVBuffer, NULL);                                     // unmap the buffer
+}
+
+void DXManager::SetInputLayout()
+{
+	//layout description
+	D3D11_INPUT_ELEMENT_DESC ied[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	//setting data to input layout
+	dev->CreateInputLayout(
+		ied,
+		2,
+		VS->GetBufferPointer(),
+		VS->GetBufferSize(),
+		&pLayout
+	);
+	devcon->IASetInputLayout(pLayout);
+}
 
 // this function initializes and prepares Direct3D for use
 void DXManager::InitD3D(HWND hWnd)
@@ -72,6 +193,7 @@ void DXManager:: RenderFrame(void)
 	devcon->ClearRenderTargetView(backBuffer, clearColor);
 
 	// do 3D rendering on the back buffer here
+	SetVertexBuffer();
 
 	// switch the back buffer and the front buffer
 	swapchain->Present(0, 0);
@@ -82,6 +204,8 @@ void DXManager ::CleanD3D()
 	swapchain->SetFullscreenState(FALSE, NULL);    // switch to windowed mode
 
 	// close and release all existing COM objects
+	pVS->Release();
+	pPS->Release();
 	swapchain->Release();
 	backBuffer->Release();
 	dev->Release();

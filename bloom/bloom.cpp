@@ -36,6 +36,9 @@ void LogMessage(LPCWSTR a_msg)
 
 #pragma endregion
 
+
+
+
 int WINAPI WinMain(HINSTANCE a_hInstance,
 	HINSTANCE a_hPrevInstance,
 	LPSTR a_lpCmdLine,
@@ -67,6 +70,8 @@ int CreateImguiTest()
 	return l_test.Run();
 }
 
+std::unique_ptr<DXManager> l_dxManager;
+
 int WINAPI MakeWindow(HINSTANCE a_hInstance,
 	HINSTANCE a_hPrevInstance,
 	LPSTR a_lpCmdLine,
@@ -74,13 +79,18 @@ int WINAPI MakeWindow(HINSTANCE a_hInstance,
 {
 
 	std::unique_ptr<Window> l_window = std::make_unique<Window>(a_hInstance, a_nCmdShow);
-	std::unique_ptr<DXManager> l_dxManager = std::make_unique<DXManager>();
+	l_dxManager = std::make_unique<DXManager>();
 
 
 	l_window->MakeWindow(WindowProc);
 	l_window->ViewWindow();
 
 	l_dxManager->InitD3D(l_window->GetRef());
+
+	//shaders/drawing related
+	l_dxManager->InitPipeline();
+	l_dxManager->SetInputLayout();
+	l_dxManager->InitGraphics();
 
 	MSG l_msg;
 
